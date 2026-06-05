@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useEffect, useRef } from 'react'
 import { loginPlayer, loadProgress, saveProgress, loadAllProgress, subscribeToProgress } from './supabase.js'
 
