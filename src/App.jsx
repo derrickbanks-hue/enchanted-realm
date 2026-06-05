@@ -409,12 +409,15 @@ export default function App() {
     const ch = CHARACTERS[charName]
     const chap = CHAPTERS[chapter]
     const pType = PUZZLE_TYPES[charName][puzzleIdx % PUZZLE_TYPES[charName].length]
-    const diffLabel = ['standard','harder','very challenging'][difficulty - 1]
+    const diffLabel = ['standard', 'harder', 'very challenging'][difficulty - 1]
     try {
       const res = await fetch('/api/puzzle', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: `You are a puzzle generator for "The Enchanted Realm: Sisters of Magic".
+          messages: [{
+            role: 'user',
+            content: `You are a puzzle generator for "The Enchanted Realm: Sisters of Magic".
 Generate a UNIQUE puzzle:
 - Player: ${ch.name}, age ${ch.age}, power: ${ch.power}
 - Chapter: "${chap.title}" — ${chap.theme}
@@ -422,7 +425,8 @@ Generate a UNIQUE puzzle:
 - Age guidance: ${ch.puzzleStyle}
 Rules: fit the fantasy setting, frame as ${ch.name}'s challenge, be original with numbers/words/logic.
 Respond ONLY valid JSON no markdown:
-{"narration":"2-sentence story setup max 35 words mentioning ${ch.name}","question":"puzzle question 1-3 sentences","options":["correct answer","wrong 2","wrong 3","wrong 4"],"answer":"exact correct answer text","hint":"helpful hint 1 sentence"}` }]
+{"narration":"2-sentence story setup max 35 words mentioning ${ch.name}","question":"puzzle question 1-3 sentences","options":["correct answer","wrong 2","wrong 3","wrong 4"],"answer":"exact correct answer text","hint":"helpful hint 1 sentence"}`
+          }]
         })
       })
       const data = await res.json()
