@@ -411,10 +411,9 @@ export default function App() {
     const pType = PUZZLE_TYPES[charName][puzzleIdx % PUZZLE_TYPES[charName].length]
     const diffLabel = ['standard','harder','very challenging'][difficulty - 1]
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/puzzle', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are a puzzle generator for "The Enchanted Realm: Sisters of Magic".
 Generate a UNIQUE puzzle:
 - Player: ${ch.name}, age ${ch.age}, power: ${ch.power}
