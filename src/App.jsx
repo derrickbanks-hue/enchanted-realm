@@ -1,4 +1,3 @@
-import React from 'react'
 import { useState, useEffect, useRef } from 'react'
 import { loginPlayer, loadProgress, saveProgress, loadAllProgress, subscribeToProgress } from './supabase.js'
 
@@ -307,7 +306,7 @@ function LoginScreen({ onLogin }) {
             return (
               <button key={name} style={st.charBtn(name)} onClick={() => { setSelectedChar(name); setPin(''); setError('') }}>
                 <div style={{ width: '100%', aspectRatio: '9/14', borderRadius: 10, overflow: 'hidden', marginBottom: 6 }}>
-                  <SVG chapter={0}/>
+                  <img src={AVATARS[name]} alt={ch.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}/>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: selectedChar === name ? ch.color : '#fff' }}>{ch.name}</div>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{ch.power}</div>
@@ -409,15 +408,13 @@ export default function App() {
     const ch = CHARACTERS[charName]
     const chap = CHAPTERS[chapter]
     const pType = PUZZLE_TYPES[charName][puzzleIdx % PUZZLE_TYPES[charName].length]
-    const diffLabel = ['standard', 'harder', 'very challenging'][difficulty - 1]
+    const diffLabel = ['standard','harder','very challenging'][difficulty - 1]
     try {
-      const res = await fetch('/api/puzzle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{
-            role: 'user',
-            content: `You are a puzzle generator for "The Enchanted Realm: Sisters of Magic".
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `You are a puzzle generator for "The Enchanted Realm: Sisters of Magic".
 Generate a UNIQUE puzzle:
 - Player: ${ch.name}, age ${ch.age}, power: ${ch.power}
 - Chapter: "${chap.title}" — ${chap.theme}
@@ -425,8 +422,7 @@ Generate a UNIQUE puzzle:
 - Age guidance: ${ch.puzzleStyle}
 Rules: fit the fantasy setting, frame as ${ch.name}'s challenge, be original with numbers/words/logic.
 Respond ONLY valid JSON no markdown:
-{"narration":"2-sentence story setup max 35 words mentioning ${ch.name}","question":"puzzle question 1-3 sentences","options":["correct answer","wrong 2","wrong 3","wrong 4"],"answer":"exact correct answer text","hint":"helpful hint 1 sentence"}`
-          }]
+{"narration":"2-sentence story setup max 35 words mentioning ${ch.name}","question":"puzzle question 1-3 sentences","options":["correct answer","wrong 2","wrong 3","wrong 4"],"answer":"exact correct answer text","hint":"helpful hint 1 sentence"}` }]
         })
       })
       const data = await res.json()
@@ -557,7 +553,7 @@ Respond ONLY valid JSON no markdown:
           <div style={{ display: 'grid', gridTemplateColumns: '155px 1fr', gap: 10, alignItems: 'start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ borderRadius: 12, overflow: 'hidden', border: `1.5px solid ${char.color}40` }}>
-                <CharSVG chapter={progress.chapter}/>
+                <img src={AVATARS[p]} alt={char.name} style={{ width: '100%', objectFit: 'cover', objectPosition: 'top' }}/>
               </div>
               {progress.items.length > 0 && (
                 <div style={{ ...st.card, padding: '0.55rem' }}>
