@@ -1,3 +1,12 @@
+import React from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { loginPlayer, loadProgress, saveProgress, loadAllProgress, subscribeToProgress } from './supabase.js'
+
+const AVATARS = {
+  charlotte: '/charlotte.png',
+  rileigh: '/rileigh.png',
+  margaux: '/margaux.png',
+}
 import { useState, useEffect, useRef } from 'react'
 import { loginPlayer, loadProgress, saveProgress, loadAllProgress, subscribeToProgress } from './supabase.js'
 
