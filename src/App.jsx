@@ -7,8 +7,6 @@ const AVATARS = {
   rileigh: '/rileigh.png',
   margaux: '/margaux.png',
 }
-import { useState, useEffect, useRef } from 'react'
-import { loginPlayer, loadProgress, saveProgress, loadAllProgress, subscribeToProgress } from './supabase.js'
 
 // ─── Constants ────────────────────────────────────────────────────
 
