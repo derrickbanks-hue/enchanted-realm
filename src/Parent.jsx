@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { supabase } from './supabase.js'
+import { supabase, resetAllProgressDB } from './supabase.js'
 
 const CHARACTERS = {
   charlotte: { name: 'Charlotte', color: '#38bdf8', avatar: '/charlotte.png' },
@@ -35,18 +35,7 @@ async function loadDashboardData() {
 }
 
 async function resetAllProgress() {
-  const { data: players } = await supabase.from('players').select('id, character').neq('character', 'parent')
-  if (!players) return false
-  for (const p of players) {
-    await supabase.from('progress').update({
-      chapter: 0, puzzle: 0, score: 0, streak: 0, difficulty: 1,
-      completed_chapters: [], items: [], skills: [],
-      total_puzzles_solved: 0, total_hints_used: 0, total_wrong_answers: 0,
-      updated_at: new Date().toISOString(),
-    }).eq('player_id', p.id)
-  }
-  await supabase.from('sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-  return true
+  return await resetAllProgressDB()
 }
 
 async function resetPlayerProgress(playerId) {
@@ -181,8 +170,9 @@ export default function Parent() {
                 const pct = Math.round((done / totalPuzzles) * 100)
                 const playerSessions = data.sessions.filter(s => s.player_id === player.id)
                 const totalTime = playerSessions.reduce((acc, s) => {
-                  if (!s.ended_at) return acc
-                  return acc + (new Date(s.ended_at) - new Date(s.started_at))
+                  if (!s.ended_at || !s.started_at) return acc
+                  const diff = new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()
+                  return acc + (diff > 0 ? diff : 0)
                 }, 0)
                 const mins = Math.round(totalTime / 60000)
 
@@ -299,5 +289,3 @@ export default function Parent() {
     </div>
   )
 }
-
-
