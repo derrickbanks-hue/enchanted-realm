@@ -16,9 +16,9 @@ const CHARACTERS = {
     sabotageEffect: 'extra_question',
     sabotageDesc: 'Forces a rival to answer a bonus question before their next puzzle (no points awarded)',
     puzzleStyle: {
-      1: '2nd grade level: single-digit addition/subtraction, simple color/shape patterns, very short riddles with obvious answers, basic counting. Keep it accessible but not too easy.',
-      2: '3rd grade level: double-digit addition/subtraction, simple multiplication (2x,3x,4x tables), slightly tricky riddles, pattern completion with 2 variables.',
-      3: '4th-5th grade level: multi-step arithmetic, division, word problems, more complex riddles, longer patterns, basic fractions or geometry concepts.',
+      1: '1st grade level: single-digit addition and subtraction within 20, counting, basic shape and color patterns, very simple riddles with obvious answers.',
+      2: '2nd grade level: double-digit addition/subtraction with regrouping, simple patterns with two variables, introductory skip-counting, slightly trickier riddles.',
+      3: '3rd grade level (this is the MAXIMUM difficulty for this player — do NOT exceed 3rd grade complexity): introductory multiplication and division (2x-5x tables), simple one-step word problems, pattern completion, riddles requiring one logical step.',
     },
   },
   rileigh: {
@@ -29,9 +29,9 @@ const CHARACTERS = {
     sabotageEffect: 'scramble',
     sabotageDesc: "Scrambles a rival's answer options and removes their hint button for one puzzle",
     puzzleStyle: {
-      1: 'age 13 standard: logic deduction, number sequences, word puzzles, vocabulary, multi-step reasoning.',
-      2: 'age 13 harder: complex logic chains, tricky number patterns, advanced vocabulary, lateral thinking riddles.',
-      3: 'age 13 very challenging: advanced logic paradoxes, algebraic thinking, complex word puzzles, multi-layer deduction.',
+      1: '7th grade level: ratios, percentages, pre-algebra expressions, logic deduction puzzles, vocabulary and word relationships.',
+      2: '8th grade level: linear equations, more advanced algebra concepts, multi-step logic chains, complex vocabulary and reasoning.',
+      3: '9th grade / Algebra I level (this is the MAXIMUM difficulty for this player — do NOT exceed 9th grade complexity): basic quadratic concepts, geometry, advanced logic puzzles, multi-step word problems.',
     },
   },
   margaux: {
@@ -42,9 +42,9 @@ const CHARACTERS = {
     sabotageEffect: 'points_deduct',
     sabotageDesc: 'Deducts 150 points from a rival instantly',
     puzzleStyle: {
-      1: 'age 9 standard: multiplication/division basics, medium riddles, memory sequences, simple logic.',
-      2: 'age 9 harder: multi-step math, trickier riddles, longer sequences, spatial reasoning.',
-      3: 'age 9 very challenging: complex arithmetic, challenging logic, multi-step word problems, advanced patterns.',
+      1: '3rd grade level: double-digit addition/subtraction, multiplication tables up to 10x10, simple one-step word problems, basic patterns.',
+      2: '4th grade level: multi-digit multiplication and division, introductory fractions, two-step word problems, more complex sequences.',
+      3: '5th grade level (this is the MAXIMUM difficulty for this player — do NOT exceed 5th grade complexity): multi-step word problems, fractions and decimals operations, order of operations, more advanced logic and patterns.',
     },
   },
 }
@@ -77,6 +77,26 @@ function Confetti() {
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 100, overflow: 'hidden' }}>
       <style>{`@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
       {pieces.map(p => <div key={p.id} style={{ position: 'absolute', left: `${p.left}%`, top: -20, width: p.size, height: p.size, background: p.color, borderRadius: p.id % 3 === 0 ? '50%' : 2, animation: `fall ${p.dur}s ${p.delay}s ease-in forwards` }}/>)}
+    </div>
+  )
+}
+
+// ── Rival activity toast notifications ────────────────────────────
+function ToastStack({ toasts }) {
+  return (
+    <div style={{ position: 'fixed', top: 10, right: 10, left: 10, zIndex: 250, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end', pointerEvents: 'none' }}>
+      <style>{`@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
+      {toasts.map(t => (
+        <div key={t.id} style={{
+          background: `${t.color}ee`, color: '#fff', padding: '8px 12px', borderRadius: 12,
+          fontSize: 12, fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+          animation: 'slideIn 0.3s ease-out', display: 'flex', alignItems: 'center', gap: 8,
+          maxWidth: 280, fontFamily: 'system-ui,sans-serif',
+        }}>
+          <img src={AVATARS[t.character]} alt="" style={{ width: 26, height: 33, objectFit: 'cover', objectPosition: 'top', borderRadius: 6, border: '1px solid rgba(255,255,255,0.4)' }}/>
+          <span>{t.message}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -340,10 +360,17 @@ export default function App() {
   const [showSabotagePanel, setShowSabotagePanel] = useState(false)
   const [activeSabotageEffect, setActiveSabotageEffect] = useState(null)
   const [isExtraQuestion, setIsExtraQuestion] = useState(false)
+  const [toasts, setToasts] = useState([])
   const timerRef = useRef(null)
   const channelRef = useRef(null)
   const sabotageChannelRef = useRef(null)
   const sessionStatsRef = useRef({ puzzles_solved: 0, hints_used: 0, wrong_answers: 0 })
+
+  function addToast(character, message) {
+    const id = Math.random().toString(36).slice(2)
+    setToasts(prev => [...prev, { id, character, message, color: CHARACTERS[character]?.color || '#7c3aed' }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000)
+  }
 
   // ── Session end on browser close ──────────────────────────────
   useEffect(() => {
@@ -357,7 +384,6 @@ export default function App() {
     if (!session) return
     loadAllProgress().then(data => {
       setAllProgress(data)
-      // Check if game already won
       const any = data.find(r => r.game_won_by)
       if (any) { setWinnerChar(any.game_won_by); setShowWinner(true) }
     })
@@ -367,6 +393,23 @@ export default function App() {
       if (payload.new.player_id === session.player.id) {
         setProgress(prev => ({ ...prev, ...payload.new }))
       }
+
+      // ── Rival activity notifications ──
+      if (payload.new.character && payload.new.character !== session.character && payload.new.character !== 'parent') {
+        const oldRow = payload.old || {}
+        const ch = CHARACTERS[payload.new.character]
+        const newSolved = payload.new.total_puzzles_solved || 0
+        const oldSolved = oldRow.total_puzzles_solved || 0
+        const newChapters = payload.new.completed_chapters?.length || 0
+        const oldChapters = oldRow.completed_chapters?.length || 0
+
+        if (newChapters > oldChapters) {
+          addToast(payload.new.character, `${ch.name} completed a chapter! 🏆`)
+        } else if (newSolved > oldSolved) {
+          addToast(payload.new.character, `${ch.name} solved a puzzle! 🎯`)
+        }
+      }
+
       // Detect win broadcast
       if (payload.new.game_won_by && payload.new.game_won_by !== '') {
         setWinnerChar(payload.new.game_won_by)
@@ -377,7 +420,6 @@ export default function App() {
     sabotageChannelRef.current = subscribeToSabotages(async payload => {
       const s = payload.new
       if (s.to_character === session.character) {
-        // Apply points deduct immediately
         if (s.effect === 'points_deduct') {
           setProgress(prev => {
             const newScore = Math.max(0, (prev?.score || 0) - 150)
@@ -390,7 +432,6 @@ export default function App() {
       }
     })
 
-    // Check pending sabotages on login
     getPendingSabotages(session.character).then(sabs => {
       if (sabs.length > 0) {
         const s = sabs[0]
@@ -432,7 +473,7 @@ export default function App() {
     setShowHint(false); setHintRevealed(false); setChapterComplete(false)
     setError(''); setShowWinner(false); setWinnerChar(null)
     setSessionId(null); setPendingSabotage(null); setActiveSabotageEffect(null)
-    setIsExtraQuestion(false); setShowSabotagePanel(false)
+    setIsExtraQuestion(false); setShowSabotagePanel(false); setToasts([])
     sessionStatsRef.current = { puzzles_solved: 0, hints_used: 0, wrong_answers: 0 }
   }
 
@@ -478,10 +519,10 @@ Generate a UNIQUE puzzle:
 - Player: ${ch.name}, age ${ch.age}, power: ${ch.power}
 - Chapter: "${chap.title}" — ${chap.theme}
 - Puzzle type: ${pType}
-- Difficulty guidance: ${styleGuide}
+- STRICT difficulty guidance (do not exceed this level): ${styleGuide}
 ${extra ? '- This is a BONUS penalty question. Make it slightly easier than normal.' : ''}
 ${historyNote}
-Rules: fit the fantasy setting, frame as ${ch.name}'s challenge, use ORIGINAL numbers/words/logic every time, never reuse concepts from history above.
+Rules: fit the fantasy setting, frame as ${ch.name}'s challenge, use ORIGINAL numbers/words/logic every time, never reuse concepts from history above. Strictly respect the difficulty ceiling described above — never generate content above that grade level.
 Respond ONLY valid JSON no markdown:
 {"narration":"2-sentence story setup max 35 words mentioning ${ch.name}","question":"puzzle question 1-3 sentences","options":["correct answer","wrong 2","wrong 3","wrong 4"],"answer":"exact correct answer text","hint":"helpful hint 1 sentence"}`
         }] })
@@ -530,7 +571,6 @@ Respond ONLY valid JSON no markdown:
       const newDiff = Math.max(1, progress.difficulty - 1)
       await persistProgress({ streak: newStreak, difficulty: newDiff, total_wrong_answers: totalWrong })
       timerRef.current = setTimeout(() => {
-        // Generate a NEW question — don't stay on same one
         generatePuzzle(p, progress.chapter, progress.puzzle, newDiff, history)
         setProgress(prev => ({ ...prev, puzzle_history: history }))
         saveProgress(session.player.id, { puzzle_history: history })
@@ -548,7 +588,6 @@ Respond ONLY valid JSON no markdown:
 
     if (streak === 2 && difficulty > progress.difficulty) playLevelUp()
 
-    // Extra question (Heart Trap) — don't advance after correct, just clear the effect
     if (isExtraQuestion) {
       setIsExtraQuestion(false)
       setActiveSabotageEffect(null)
@@ -559,7 +598,6 @@ Respond ONLY valid JSON no markdown:
       return
     }
 
-    // Clear scramble effect after one puzzle
     if (activeSabotageEffect === 'scramble') setActiveSabotageEffect(null)
 
     const isLast = progress.puzzle >= PUZZLE_TYPES[p].length - 1
@@ -619,6 +657,7 @@ Respond ONLY valid JSON no markdown:
       {showWinner && <WinnerScreen allProgress={allProgress} winner={winnerChar} isWinner={winnerChar === p} onReset={handleWinnerReset}/>}
       {pendingSabotage && <SabotageBanner sabotage={pendingSabotage} onDismiss={dismissSabotage}/>}
       {showSabotagePanel && <SabotagePanel character={p} allProgress={allProgress} weaponUsed={progress.weapon_used} onSabotage={handleSabotageTarget} onClose={() => setShowSabotagePanel(false)}/>}
+      <ToastStack toasts={toasts}/>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '0.75rem' }}>
         {/* Top bar */}
@@ -736,7 +775,7 @@ Respond ONLY valid JSON no markdown:
                     })}
                   </div>
                   <div style={{ display: 'flex', gap: 7 }}>
-                    {hintsLeft > 0 && !activeSabotageEffect?.includes('scramble') ? (
+                    {hintsLeft > 0 && activeSabotageEffect !== 'scramble' ? (
                       <button onClick={() => {
                         if (hintRevealed) { setShowHint(x => !x); return }
                         playClick(); setShowHint(true); setHintRevealed(true)
